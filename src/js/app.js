@@ -13,24 +13,14 @@ const accountingSummary = document.querySelector('[data-id=accounting]');
 const terminalSummary = document.querySelector('[data-id=terminal]');
 const totalSummary = document.querySelector('#total-price');
 
-const productPrice = Number(0.5);
-const orderPrice = Number(0.25);
-const open = 'open';
-
-class Calculator {
-    constructor(quantity, price) {
-        this.quantity = quantity;
-        this.price = price;
-    }
-    total() {
-        return this.quantity * this.price;
-    }
-};
+const PRODUCT_PRICE = Number(0.5);
+const ORDER_PRICE = Number(0.25);
+const OPEN_CLASS = 'open';
 
 const packages = {
-    '$10': 'basic',
-    '$15': 'professional',
-    '$25': 'premium'
+    basic: '$10',
+    professional: '$15',
+    premium: '$25'
 };
 
 const totalChangeListener = function () {
@@ -43,57 +33,57 @@ const totalChangeListener = function () {
             sum += Number(e.lastElementChild.innerText.substring(1));
         });
         totalSummary.lastElementChild.innerText = `$${sum}`;
-        totalSummary.classList.add(open);
+        totalSummary.classList.add(OPEN_CLASS);
     } else {
-        totalSummary.classList.remove(open);
+        totalSummary.classList.remove(OPEN_CLASS);
     }
 };
 
-const numberInputListener = function (collection) {
+const numberInputListener = function (collection, callback) {
     let inputValue = this.value;
-    let currentPrice = 0;
 
-    if (isNaN(inputValue) === false) {
-        (this.id === 'products') ? currentPrice = productPrice : currentPrice = orderPrice;
+    if (!isNaN(inputValue)) {
+        let currentPrice = 0;
+        (this.id === 'products') ? currentPrice = PRODUCT_PRICE : currentPrice = ORDER_PRICE;
 
-        const calculator = new Calculator(inputValue, currentPrice);
+        collection[1].innerText = `${inputValue} * $${currentPrice}`;
+        collection[2].innerText = `$${inputValue * currentPrice}`;
 
-        collection[1].innerText = `${calculator.quantity} * $${calculator.price}`;
-        collection[2].innerText = `$${calculator.total()}`;
-        (inputValue.length > 0) ?
-            collection[0].parentElement.classList.add(open) :
-            collection[0].parentElement.classList.remove(open);
+        (inputValue.length > 0)
+            ? collection[0].parentElement.classList.add(OPEN_CLASS)
+            : collection[0].parentElement.classList.remove(OPEN_CLASS);
     }
-    totalChangeListener();
+    callback();
 };
 
-const checkboxListener = function (element) {
-    this.checked ? element.classList.add(open) : element.classList.remove(open);
-    totalChangeListener();
+const checkboxListener = function (element, callback) {
+    this.checked ? element.classList.add(OPEN_CLASS) : element.classList.remove(OPEN_CLASS);
+    callback();
 };
 
-const dropdownListener = function () {
-    this.classList.toggle(open);
-    totalChangeListener();
+const dropdownListener = function (callback) {
+    this.classList.toggle(OPEN_CLASS);
+    callback();
 };
 
-const selectListener = function () {
-    let value = this.dataset.value;
+const selectListener = function (callback) {
+    const value = this.dataset.value;
     selectInputElement.innerText = value;
-    Object.entries(packages).forEach(([key, validation]) => {
-       if(validation === value) {
-           packageSummary.children[1].innerText = value;
-           packageSummary.lastElementChild.innerText = key;
-       }
+    Object.entries(packages).forEach(([package, price]) => {
+        if(package === value) {
+            packageSummary.children[1].innerText = value;
+            packageSummary.lastElementChild.innerText = price;
+        }
     });
-    packageSummary.classList.add(open);
-    totalChangeListener();
+    packageSummary.classList.add(OPEN_CLASS);
+    callback();
 }
 
-productsElement.addEventListener('change', numberInputListener.bind(productsElement, productSummary));
-ordersElement.addEventListener('change', numberInputListener.bind(ordersElement, orderSummary));
-packageElement.addEventListener('click', dropdownListener);
-selectElements.forEach((e) => e.addEventListener('click', selectListener));
-accountingElement.addEventListener('change', checkboxListener.bind(accountingElement, accountingSummary));
-terminalElement.addEventListener('change', checkboxListener.bind(terminalElement, terminalSummary));
-
+productsElement.addEventListener('change', numberInputListener.bind(productsElement, productSummary, totalChangeListener));
+ordersElement.addEventListener('change', numberInputListener.bind(ordersElement, orderSummary, totalChangeListener));
+selectElements.forEach((e) =>
+    e.addEventListener('click', selectListener.bind(e, totalChangeListener))
+);
+packageElement.addEventListener('click', dropdownListener.bind(packageElement, totalChangeListener));
+accountingElement.addEventListener('change', checkboxListener.bind(accountingElement, accountingSummary, totalChangeListener));
+terminalElement.addEventListener('change', checkboxListener.bind(terminalElement, terminalSummary, totalChangeListener));
