@@ -25,7 +25,7 @@ class Calculator {
     total() {
         return this.quantity * this.price;
     }
-};1
+};
 
 const packages = {
     '$10': 'basic',
